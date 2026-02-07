@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Expense Tracker</title>
+  
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+    }
+
+    body {
+      background: #f4f6f9;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+
+    .total {
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #27ae60;
+      margin-top: 10px;
+    }
+
+    form {
+      display: grid;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    input, select, button {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 1rem;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+
+    button {
+      background: #3498db;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+
+    .expense-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .expense-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f9fafb;
+      padding: 12px;
+      border-radius: 10px;
+    }
+
+    .expense-details {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .expense-details span {
+      font-size: 0.85rem;
+      color: #555;
+    }
+
+    .expense-amount {
+      font-weight: bold;
+      color: #e74c3c;
+    }
+
+    .delete-btn {
+      background: #e74c3c;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    .delete-btn:hover {
+      background: #c0392b;
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- Total Card -->
+    <div class="card">
+      <h1>Expense Tracker</h1>
+      <div class="total">₹ <span id="totalAmount">0</span></div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card">
+      <form id="expenseForm">
+        <input type="number" id="amount" placeholder="Amount *" required />
+
+        <select id="category" required>
+          <option value="">Select Category *</option>
+          <option>Food</option>
+          <option>Travel</option>
+          <option>Shopping</option>
+          <option>Bills</option>
+          <option>Other</option>
+        </select>
+
+        <input type="date" id="date" />
+        <input type="text" id="note" placeholder="Note (optional)" />
+
+        <button type="submit">Add Expense</button>
+      </form>
+    </div>
+
+    <!-- Expense List -->
+    <div class="card">
+      <h3>Expenses</h3>
+      <div class="expense-list" id="expenseList"></div>
+    </div>
+
+  </div>
+
+  
+
+  <script>
+    const firebaseConfig = {
+  apiKey: "AIzaSyBbakooqeMrGma1smUI8KNiHuk484Eg1e8",
+  authDomain: "tracker-web-app-7ae58.firebaseapp.com",
+  projectId: "tracker-web-app-7ae58",
+  storageBucket: "tracker-web-app-7ae58.firebasestorage.app",
+  messagingSenderId: "1017073416028",
+  appId: "1:1017073416028:web:cc898d62a9fef57a67b399"
+};
+    
+    const form = document.getElementById("expenseForm");
+    const expenseList = document.getElementById("expenseList");
+    const totalAmountEl = document.getElementById("totalAmount");
+
+    let expenses = [];
+
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const amount = document.getElementById("amount").value;
+      const category = document.getElementById("category").value;
+      const date = document.getElementById("date").value;
+      const note = document.getElementById("note").value;
+
+      if (!amount || !category) {
+        alert("Please fill required fields");
+        return;
+      }
+
+      const expense = {
+        id: Date.now(),
+        amount: Number(amount),
+        category,
+        date,
+        note
+      };
+
+      expenses.push(expense);
+      updateUI();
+      form.reset();
+    });
+
+    function updateUI() {
+      expenseList.innerHTML = "";
+      let total = 0;
+
+      expenses.forEach(exp => {
+        total += exp.amount;
+
+        const div = document.createElement("div");
+        div.className = "expense-item";
+
+        div.innerHTML = `
+          <div class="expense-details">
+            <strong>${exp.category}</strong>
+            <span>${exp.date || "No date"}</span>
+            <span>${exp.note || "No note"}</span>
+          </div>
+          <div>
+            <div class="expense-amount">₹ ${exp.amount}</div>
+            <button class="delete-btn" onclick="deleteExpense(${exp.id})">Delete</button>
+          </div>
+        `;
+
+        expenseList.appendChild(div);
+      });
+
+      totalAmountEl.textContent = total;
+    }
+
+    function deleteExpense(id) {
+      expenses = expenses.filter(exp => exp.id !== id);
+      updateUI();
+    }
+  </script>
+
+</body>
+</html>
